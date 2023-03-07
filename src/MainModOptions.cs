@@ -11,14 +11,31 @@ namespace ScreenPeek
     {
         public static MainModOptions instance = new MainModOptions();
 
+        private readonly Vector2 buttonSize = new Vector2(150f, 34f);
+
         public static Configurable<KeyCode> keyboardKeybind = instance.config.Bind("keyboardKeybind", KeyCode.LeftAlt, new ConfigurableInfo("Keybind to hold to peek.", null, "", new object[]
         {
             "Peek state keybind"
         }));
 
-        public static Configurable<KeyCode> aimKeybind = instance.config.Bind("aimKeybind", KeyCode.LeftAlt, new ConfigurableInfo("Directional keys to control the camera.", null, "", new object[]
+        public static Configurable<KeyCode> upKeybind = instance.config.Bind("upKeybind", KeyCode.UpArrow, new ConfigurableInfo("Directional up key.", null, "", new object[]
         {
-            "Aim keybinds"
+            "Look up keybind"
+        }));
+
+        public static Configurable<KeyCode> rightKeybind = instance.config.Bind("rightKeybind", KeyCode.RightArrow, new ConfigurableInfo("Directional right key.", null, "", new object[]
+        {
+            "Look right keybind"
+        }));
+
+        public static Configurable<KeyCode> downKeybind = instance.config.Bind("downKeybind", KeyCode.DownArrow, new ConfigurableInfo("Directional down key.", null, "", new object[]
+        {
+            "Look down keybind"
+        }));
+
+        public static Configurable<KeyCode> leftKeybind = instance.config.Bind("leftKeybind", KeyCode.LeftArrow, new ConfigurableInfo("Directional left key.", null, "", new object[]
+        {
+            "Look left keybind"
         }));
 
         public static Configurable<bool> standStillWhilePeeking = instance.config.Bind("standStillWhilePeeking", true, new ConfigurableInfo("Disables movement actions while peeking.", null, "", new object[]
@@ -35,7 +52,7 @@ namespace ScreenPeek
         {
             base.Initialize();
             Tabs = new OpTab[1];
-            Tabs[0] = new OpTab(this, "General");
+            Tabs[0] = new OpTab(this);
             var tab = Tabs[0];
 
             tab.AddItems(new UIelement[]
@@ -56,7 +73,7 @@ namespace ScreenPeek
                     verticalAlignment = OpLabel.LabelVAlignment.Center,
                     description = keyboardKeybind.info.description
                 },
-                new OpKeyBinder(keyboardKeybind, new Vector2(150f, 460f), new Vector2(146f, 34f), false, OpKeyBinder.BindController.AnyController)
+                new OpKeyBinder(keyboardKeybind, new Vector2(150f, 460f), buttonSize, false, OpKeyBinder.BindController.AnyController)
             });
 
             tab.AddItems(new UIelement[]
@@ -80,6 +97,27 @@ namespace ScreenPeek
                 },
                 new OpCheckBox(togglePeeking, new Vector2(150f, 340f))
             });
+
+            AddDirectionKeys(ref tab, new Vector2(0, 280));
+        }
+
+        private void AddDirectionKeys(ref OpTab tab, Vector2 pos)
+        {
+            var buttonPos = pos + new Vector2(300, 34); //Initially up arrow button pos
+            tab.AddItems(new UIelement[]
+            {
+                new OpLabel(pos, new Vector2(100f, 34f), "Directional keys", FLabelAlignment.Center, false, null)
+                {
+                    alignment = FLabelAlignment.Right,
+                    verticalAlignment = OpLabel.LabelVAlignment.Center,
+                    description = keyboardKeybind.info.description
+                },
+                new OpKeyBinder(upKeybind, buttonPos, buttonSize, false, OpKeyBinder.BindController.AnyController),
+                new OpKeyBinder(rightKeybind, buttonPos + new Vector2(buttonSize.x, -buttonSize.y), buttonSize, false, OpKeyBinder.BindController.AnyController),
+                new OpKeyBinder(downKeybind, buttonPos + new Vector2(0, -buttonSize.y), buttonSize, false, OpKeyBinder.BindController.AnyController),
+                new OpKeyBinder(leftKeybind, buttonPos + new Vector2(-buttonSize.x, -buttonSize.y), buttonSize, false, OpKeyBinder.BindController.AnyController)
+            });
+
         }
 
     }

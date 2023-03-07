@@ -1,24 +1,11 @@
 ﻿using BepInEx;
-using RWCustom;
 using System;
 using System.Security.Permissions;
 using UnityEngine;
-using Unity;
 using System.Collections.Generic;
-using On;
-using BepInEx.Logging;
-using System.Runtime.CompilerServices;
-using System.Security;
-using MonoMod.Cil;
-using Mono.Cecil.Cil;
-using UnityEngine.Assertions.Must;
-using System.IO;
-using System.Reflection;
 
-#pragma warning disable CS0618 // Do not remove the following line.
-//[assembly: IgnoresAccessChecksTo("Assembly-CSharp")]
+#pragma warning disable CS0618
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
-//[module: UnverifiableCode]
 
 namespace ScreenPeek
 {
@@ -26,13 +13,13 @@ namespace ScreenPeek
     [BepInPlugin("ceko.screenpeek", "Screen Peek", "1.1.0")]
     public class MainMod : BaseUnityPlugin
     {
-        private static Dictionary<KeyCode, Vector2> keyCodes = new()
+        internal static Dictionary<KeyCode, Vector2> keyCodes = new()
         {
-            {KeyCode.UpArrow, new Vector2(0,1000) },
-            {KeyCode.RightArrow, new Vector2(1000,0) },
-            {KeyCode.DownArrow, new Vector2(0,-1000) },
-            {KeyCode.LeftArrow, new Vector2(-1000,0) }
-        }; //Supports keyboard keycodes for now
+            {MainModOptions.upKeybind.Value, new Vector2(0,1000)},
+            {MainModOptions.rightKeybind.Value, new Vector2(1000,0)},
+            {MainModOptions.downKeybind.Value, new Vector2(0,-1000)},
+            {MainModOptions.leftKeybind.Value, new Vector2(-1000,0)}
+        };
 
         //Screen check margins
         private const float xMargin = 350f;
@@ -161,16 +148,19 @@ namespace ScreenPeek
         {
             previousAim = aim;
             aim = Vector2.zero;
-            foreach (var keyCode in keyCodes)
-            {
-                if (Input.GetKey(keyCode.Key))
-                    aim += keyCode.Value;
-            }
+            if(Input.GetKey(MainModOptions.upKeybind.Value)) //Deal with this later
+                aim += new Vector2(0, 1000);
+            if (Input.GetKey(MainModOptions.rightKeybind.Value))
+                aim += new Vector2(1000, 0);
+            if (Input.GetKey(MainModOptions.downKeybind.Value))
+                aim += new Vector2(0, -1000);
+            if (Input.GetKey(MainModOptions.leftKeybind.Value))
+                aim += new Vector2(-1000, 0);
         }
 
         private void ChangeCamera(RoomCamera rc)
         {
-            Debug.Log("Pressed");
+            Debug.Log("ScreenPeek: Button Pressed");
             camPos = FindTargetCamera(rc, rc.CamPos(originCamPos) + aim);
             rc.MoveCamera(camPos);
         }
