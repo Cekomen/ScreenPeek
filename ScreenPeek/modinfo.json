@@ -1,7 +1,7 @@
 {
     "id": "ceko.screenpeek",
     "name": "Screen Peek",
-    "version": "1.1.0",
+    "version": "2.0.0",
     "target_game_version": "v1.9.06",
     "authors": "Ceko",
     "description": "Allows you to peek a look into other screens!",
