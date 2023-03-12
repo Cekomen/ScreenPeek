@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using Menu.Remix.MixedUI;
+﻿using Menu.Remix.MixedUI;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace ScreenPeek
 {

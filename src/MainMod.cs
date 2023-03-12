@@ -2,8 +2,6 @@
 using System;
 using System.Security.Permissions;
 using UnityEngine;
-using System.Collections.Generic;
-using System.Timers;
 
 #pragma warning disable CS0618
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
@@ -31,6 +29,7 @@ namespace ScreenPeek
         private int camPos = -1;
         private int originCamPos = 0;
         private int targetPlayer = 0;
+        RWCustom.IntVector2 intvec = new RWCustom.IntVector2(0, 0);
 
         public static bool isInitialized = false;
 
@@ -46,11 +45,11 @@ namespace ScreenPeek
         }
 
 
-
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
             MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
+            targetPlayer = 0; //If jolly is disabled
 
             if (isInitialized) return;
             isInitialized = true;
@@ -61,19 +60,7 @@ namespace ScreenPeek
             On.RoomCamera.MoveCamera_Room_int += RoomCamera_MoveCamera_Room_int;
             On.Player.MovementUpdate += Player_MovementUpdate;
             On.RoomCamera.MoveCamera_int += RoomCamera_MoveCamera_int;
-            On.RoomCamera.ChangeCameraToPlayer += RoomCamera_ChangeCameraToPlayer;
             On.RoomCamera.ChangeRoom += RoomCamera_ChangeRoom;
-            On.Player.PermaDie += Player_PermaDie;
-        }
-
-        private void Player_PermaDie(On.Player.orig_PermaDie orig, Player self)
-        {
-            orig(self);
-            var game = self.abstractCreature.Room.realizedRoom.game;
-            if (self.playerState.playerNumber == targetPlayer && game.FirstAlivePlayer?.realizedCreature != null) //Is this check necessary, say when a DLL eats you? idk
-            {
-                targetPlayer = (game.FirstAlivePlayer.realizedCreature as Player).playerState.playerNumber;
-            }
         }
 
         private void RoomCamera_ChangeRoom(On.RoomCamera.orig_ChangeRoom orig, RoomCamera self, Room newRoom, int cameraPosition)
@@ -81,15 +68,6 @@ namespace ScreenPeek
             orig(self, newRoom, cameraPosition);
             //Debug.Log("ChangeRoom cameraposition: " + cameraPosition + ", room name: " + newRoom.abstractRoom.name);
             originCamPos = cameraPosition;
-        }
-
-        private void RoomCamera_ChangeCameraToPlayer(On.RoomCamera.orig_ChangeCameraToPlayer orig, RoomCamera self, AbstractCreature cameraTarget)
-        {
-            orig(self, cameraTarget);
-            Debug.Log("ScreenPeek: Change camera to player " + cameraTarget);
-            targetPlayer = self.game.Players.IndexOf(cameraTarget);
-
-            //originCamPos = self.currentCameraPosition;
         }
 
         private void RoomCamera_MoveCamera_Room_int(On.RoomCamera.orig_MoveCamera_Room_int orig, RoomCamera self, Room newRoom, int camPos)
@@ -101,18 +79,27 @@ namespace ScreenPeek
         private void RoomCamera_Update(On.RoomCamera.orig_Update orig, RoomCamera self)
         {
             orig(self);
-            var stunned = self.followAbstractCreature?.realizedCreature != null && (self.followAbstractCreature.realizedCreature.Stunned || self.followAbstractCreature.realizedCreature.dead);
-    
+            var player = self.followAbstractCreature?.realizedCreature;
+            if (player == null) return;
+
+            if(ModManager.JollyCoop) //Have to reset targetPlayer to 0 in init if jolly is disabled
+                targetPlayer = (player as Player).playerState.playerNumber;
+            Debug.Log(targetPlayer);
+            var stunned = (player.Stunned || player.dead);
+
             previousAim = aim;
             aim = Vector2.zero;
-            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 1].Value)) //Deal with this later
+            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 1].Value) || intvec.x == -1) //Deal with this later, DON'T complain to me if you use controller and keyboard simultaneously
                 aim += new Vector2(-1000, 0);
-            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 2].Value))
+            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 2].Value) || intvec.y == 1)
                 aim += new Vector2(0, 1000);
-            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 3].Value))
+            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 3].Value) || intvec.x == 1)
                 aim += new Vector2(1000, 0);
-            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 4].Value))
+            if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 4].Value) || intvec.y == -1)
                 aim += new Vector2(0, -1000);
+            
+            //Debug.Log("Aim: " + aim + ", targetplayer: " + targetPlayer);
+            //intvec *= 0; //In case we release peeking/switch cameras before releasing the joystick
 
             if (keyPressed && (!isPeeking || aimChanged) && !stunned)
             {
@@ -132,7 +119,7 @@ namespace ScreenPeek
         private void Player_MovementUpdate(On.Player.orig_MovementUpdate orig, Player self, bool eu)
         {
             var currentPlayer = self.playerState.playerNumber;
-      
+
             //Toggle option
             var peekKeyPressed = Input.GetKey(MainModOptions.keybinds[targetPlayer, 0].Value);
             toggleOnNextPress = toggleOnNextPress || !peekKeyPressed;
@@ -144,10 +131,11 @@ namespace ScreenPeek
 
             if (keyPressed && currentPlayer == targetPlayer)
             {
+                intvec = self.input[0].IntVec; //Have to capture the analog input before we set it to 0 below
                 if (aim.magnitude != 0)
                 {
                     (self.graphicsModule as PlayerGraphics).LookAtPoint(aim + self.mainBodyChunk.pos, 10001f);
-                    lastPeekTimer[currentPlayer] = 40; 
+                    lastPeekTimer[currentPlayer] = 40;
                 }
 
                 if (MainModOptions.standStillWhilePeeking.Value)
