@@ -9,7 +9,7 @@ using UnityEngine;
 namespace ScreenPeek
 {
 
-    [BepInPlugin("ceko.screenpeek", "Screen Peek", "2.0.0")]
+    [BepInPlugin("ceko.screenpeek", "Screen Peek", "2.0.1")]
     public class MainMod : BaseUnityPlugin
     {
 
@@ -34,7 +34,7 @@ namespace ScreenPeek
         public static bool isInitialized = false;
 
         public static readonly string MOD_ID = "ceko.screenpeek";
-        public static readonly string version = "2.0.0";
+        public static readonly string version = "2.0.1";
 
         public MainMod()
         { }
