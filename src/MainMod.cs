@@ -84,7 +84,6 @@ namespace ScreenPeek
 
             if(ModManager.JollyCoop) //Have to reset targetPlayer to 0 in init if jolly is disabled
                 targetPlayer = (player as Player).playerState.playerNumber;
-            Debug.Log(targetPlayer);
             var stunned = (player.Stunned || player.dead);
 
             previousAim = aim;
