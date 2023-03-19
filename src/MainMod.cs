@@ -9,13 +9,13 @@ using UnityEngine;
 namespace ScreenPeek
 {
 
-    [BepInPlugin("ceko.screenpeek", "Screen Peek", "2.0.1")]
+    [BepInPlugin("ceko.screenpeek", "Screen Peek", "2.0.3")]
     public class MainMod : BaseUnityPlugin
     {
 
         //Screen check margins
-        private const float xMargin = 350f;
-        private const float yMargin = 350f;
+        private const float xMargin = 500f;
+        private const float yMargin = 500f;
 
         private bool keyToggled = false;
         private bool toggleOnNextPress = true;
@@ -34,7 +34,7 @@ namespace ScreenPeek
         public static bool isInitialized = false;
 
         public static readonly string MOD_ID = "ceko.screenpeek";
-        public static readonly string version = "2.0.1";
+        public static readonly string version = "2.0.3";
 
         public MainMod()
         { }
@@ -89,13 +89,13 @@ namespace ScreenPeek
             previousAim = aim;
             aim = Vector2.zero;
             if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 1].Value) || intvec.x == -1) //Deal with this later, DON'T complain to me if you use controller and keyboard simultaneously
-                aim += new Vector2(-1000, 0);
+                    aim += new Vector2(-1000, 0);
             if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 2].Value) || intvec.y == 1)
-                aim += new Vector2(0, 1000);
+                    aim += new Vector2(0, 1000);
             if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 3].Value) || intvec.x == 1)
-                aim += new Vector2(1000, 0);
+                    aim += new Vector2(1000, 0);
             if (Input.GetKey(MainModOptions.keybinds[targetPlayer, 4].Value) || intvec.y == -1)
-                aim += new Vector2(0, -1000);
+                    aim += new Vector2(0, -1000);
             
             //Debug.Log("Aim: " + aim + ", targetplayer: " + targetPlayer);
             //intvec *= 0; //In case we release peeking/switch cameras before releasing the joystick
@@ -130,7 +130,7 @@ namespace ScreenPeek
 
             if (keyPressed && currentPlayer == targetPlayer)
             {
-                intvec = self.input[0].IntVec; //Have to capture the analog input before we set it to 0 below
+                intvec = self.input[0].IntVec * (self.input[0].gamePad ? 1 : 0); //Have to capture the analog input before we set it to 0 below, IF the input is from analog
                 if (aim.magnitude != 0)
                 {
                     (self.graphicsModule as PlayerGraphics).LookAtPoint(aim + self.mainBodyChunk.pos, 10001f);
@@ -169,14 +169,14 @@ namespace ScreenPeek
 
         private void ChangeCamera(RoomCamera rc)
         {
-            Debug.Log("ScreenPeek: Button Pressed");
+            //Debug.Log("ScreenPeek: Button Pressed");
             camPos = FindTargetCamera(rc, rc.CamPos(originCamPos) + aim);
             rc.MoveCamera(camPos);
         }
 
         private int FindTargetCamera(RoomCamera rc, Vector2 targetVector)
         {
-            Debug.Log("ScreenPeek: Find target cam, targetVector: " + targetVector);
+            Debug.Log("ScreenPeek: Find target cam, estimate coordinates: " + targetVector);
             int camPos = 0;
             float diff = float.MaxValue;
             Vector2 cam; //Cycled camera vector
@@ -195,10 +195,10 @@ namespace ScreenPeek
             if (Math.Abs(rc.CamPos(camPos).y - targetVector.y) > yMargin ||
                Math.Abs(rc.CamPos(camPos).x - targetVector.x) > xMargin) //if camera found exceeds the allowed margin
             {
-                Debug.Log("ScreenPeek: Target camera not found, return current camera.");
+                Debug.Log("ScreenPeek: Target camera not found, return current camera "+rc.currentCameraPosition);
                 camPos = rc.currentCameraPosition;
             }
-            Debug.Log("ScreenPeek: Return campos " + camPos + " as closest.");
+            Debug.Log("ScreenPeek: Return camera " + camPos + " as closest.");
             return camPos;
         }
 
