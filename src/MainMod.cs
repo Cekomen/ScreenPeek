@@ -9,7 +9,7 @@ using UnityEngine;
 namespace ScreenPeek
 {
 
-    [BepInPlugin("ceko.screenpeek", "Screen Peek", "2.0.3")]
+    [BepInPlugin("ceko.screenpeek", "Screen Peek", "2.0.4")]
     public class MainMod : BaseUnityPlugin
     {
 
@@ -34,7 +34,7 @@ namespace ScreenPeek
         public static bool isInitialized = false;
 
         public static readonly string MOD_ID = "ceko.screenpeek";
-        public static readonly string version = "2.0.3";
+        public static readonly string version = "2.0.4";
 
         public MainMod()
         { }
@@ -170,36 +170,32 @@ namespace ScreenPeek
         private void ChangeCamera(RoomCamera rc)
         {
             //Debug.Log("ScreenPeek: Button Pressed");
-            camPos = FindTargetCamera(rc, rc.CamPos(originCamPos) + aim);
+            camPos = FindTargetCamera(rc, rc.CamPos(originCamPos), aim);
             rc.MoveCamera(camPos);
         }
 
-        private int FindTargetCamera(RoomCamera rc, Vector2 targetVector)
+        private int FindTargetCamera(RoomCamera rc, Vector2 camVector, Vector2 aimVector)
         {
-            Debug.Log("ScreenPeek: Find target cam, estimate coordinates: " + targetVector);
-            int camPos = 0;
-            float diff = float.MaxValue;
-            Vector2 cam; //Cycled camera vector
-            for (int i = 0; i < rc.room.cameraPositions.Length; i++)
+            Vector2 targetVector = Vector2.zero;
+            Debug.Log("ScreenPeek: Find target cam, estimate coordinates: " + (camVector + aimVector));
+            
+            for (int i = 6; i <= 10; i++)
             {
-                cam = rc.room.cameraPositions[i];
-                var newDiff = Vector2.Distance(cam, targetVector);
-                //Debug.Log("For loop, index " + i + ", distance is " + newDiff);
-                if (newDiff < diff) //if new camera is closer
+                targetVector.Set(camVector.x + (aimVector.x * (i / 10.0f)), camVector.y + (aimVector.y * (i / 10.0f)));
+                for (int j = 0; j < rc.room.cameraPositions.Length; j++)
+            {
+                    if (!(Math.Abs(rc.CamPos(j).y - targetVector.y) > yMargin ||
+                        Math.Abs(rc.CamPos(j).x - targetVector.x) > xMargin)) //Camera is within margin 
                 {
-                    //Debug.Log("New closest cam found, index " + i + " and vector " + cam);
-                    diff = newDiff;
-                    camPos = i;
+                        Debug.Log("ScreenPeek: Return camera " + j + " as closest.");
+                        return j;
                 }
             }
-            if (Math.Abs(rc.CamPos(camPos).y - targetVector.y) > yMargin ||
-               Math.Abs(rc.CamPos(camPos).x - targetVector.x) > xMargin) //if camera found exceeds the allowed margin
-            {
-                Debug.Log("ScreenPeek: Target camera not found, return current camera "+rc.currentCameraPosition);
-                camPos = rc.currentCameraPosition;
             }
-            Debug.Log("ScreenPeek: Return camera " + camPos + " as closest.");
-            return camPos;
+                        
+            Debug.Log("ScreenPeek: Target camera not found, return current camera " + rc.currentCameraPosition);
+            return rc.currentCameraPosition;
+           
         }
 
     }
