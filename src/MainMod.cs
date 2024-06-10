@@ -33,6 +33,9 @@ namespace ScreenPeek
 
         public static bool isInitialized = false;
 
+        public static bool is_sb_screen_scroll_enabled = false;
+        public static bool is_split_screen_coop_enabled = false;
+
         public static readonly string MOD_ID = "ceko.screenpeek";
         public static readonly string version = "2.0.4";
 
@@ -48,6 +51,24 @@ namespace ScreenPeek
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+
+            foreach (ModManager.Mod mod in ModManager.ActiveMods)
+            {
+                //Logger.Log(BepInEx.Logging.LogLevel.Debug, mod.id);
+                //Debug.Log(mod.id);
+                if (mod.id == "SBCameraScroll")
+                {
+                    is_sb_screen_scroll_enabled = true;
+                    continue;
+                }
+
+                if (mod.id == "henpemaz_splitscreencoop")
+                {
+                    is_split_screen_coop_enabled = true;
+                    continue;
+                }
+            }
+
             MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
             targetPlayer = 0; //If jolly is disabled
 
@@ -56,11 +77,18 @@ namespace ScreenPeek
 
             Debug.Log("ScreenPeek: Loaded. Version: " + version);
 
-            On.RoomCamera.Update += RoomCamera_Update;
-            On.RoomCamera.MoveCamera_Room_int += RoomCamera_MoveCamera_Room_int;
-            On.Player.MovementUpdate += Player_MovementUpdate;
-            On.RoomCamera.MoveCamera_int += RoomCamera_MoveCamera_int;
-            On.RoomCamera.ChangeRoom += RoomCamera_ChangeRoom;
+            if (!is_sb_screen_scroll_enabled)
+            {
+                On.Player.MovementUpdate += Player_MovementUpdate;
+                On.RoomCamera.Update += RoomCamera_Update;
+                On.RoomCamera.MoveCamera_Room_int += RoomCamera_MoveCamera_Room_int;
+                On.RoomCamera.MoveCamera_int += RoomCamera_MoveCamera_int;
+                On.RoomCamera.ChangeRoom += RoomCamera_ChangeRoom;
+            }
+            else
+            {
+                On.Player.MovementUpdate += Player_CameraScroll_MovementUpdate;
+            }
         }
 
         private void RoomCamera_ChangeRoom(On.RoomCamera.orig_ChangeRoom orig, RoomCamera self, Room newRoom, int cameraPosition)
@@ -158,6 +186,49 @@ namespace ScreenPeek
             orig(self, eu);
         }
 
+        private void Player_CameraScroll_MovementUpdate(On.Player.orig_MovementUpdate orig, Player self, bool eu)
+        {
+            var currentPlayer = self.playerState.playerNumber;
+
+            //Toggle option
+            var peekKeyPressed = Input.GetKey(MainModOptions.keybinds[targetPlayer, 0].Value);
+            toggleOnNextPress = toggleOnNextPress || !peekKeyPressed;
+            if (toggleOnNextPress && peekKeyPressed)
+            {
+                toggleOnNextPress = false;
+                keyToggled = !keyToggled;
+            }
+
+            if (keyPressed && currentPlayer == targetPlayer)
+            {
+                intvec = self.input[0].IntVec * (self.input[0].gamePad ? 1 : 0); //Have to capture the analog input before we set it to 0 below, IF the input is from analog
+                if (aim.magnitude != 0)
+                {
+                    (self.graphicsModule as PlayerGraphics).LookAtPoint(aim + self.mainBodyChunk.pos, 10001f);
+                    lastPeekTimer[currentPlayer] = 40;
+                }
+
+                if (MainModOptions.standStillWhilePeeking.Value)
+                {
+                    self.input[0].x = 0;
+                    self.input[0].y = 0;
+                    self.input[0].jmp = false;
+                    self.input[0].thrw = false;
+                    self.input[0].pckp = false;
+                }
+            }
+            if (lastPeekTimer[self.playerState.playerNumber] > 0)
+            {
+                //Debug.Log("Current player: "+ currentPlayer + ", Targer player: "+targetPlayer+", lastPeekTimer: " + lastPeekTimer[currentPlayer]);
+                if (--lastPeekTimer[currentPlayer] == 0)
+                {
+                    (self.graphicsModule as PlayerGraphics).objectLooker.lookAtPoint = null;
+                    (self.graphicsModule as PlayerGraphics).LookAtNothing();
+                }
+            }
+            orig(self, eu);
+        }
+
         private void RoomCamera_MoveCamera_int(On.RoomCamera.orig_MoveCamera_int orig, RoomCamera self, int camPos)
         {
             originCamPos = camPos; //Update current campos of the slugcat in the same room
@@ -183,14 +254,14 @@ namespace ScreenPeek
             {
                 targetVector.Set(camVector.x + (aimVector.x * (i / 10.0f)), camVector.y + (aimVector.y * (i / 10.0f)));
                 for (int j = 0; j < rc.room.cameraPositions.Length; j++)
-            {
+                {
                     if (!(Math.Abs(rc.CamPos(j).y - targetVector.y) > yMargin ||
                         Math.Abs(rc.CamPos(j).x - targetVector.x) > xMargin)) //Camera is within margin 
-                {
+                    {
                         Debug.Log("ScreenPeek: Return camera " + j + " as closest.");
                         return j;
+                    }
                 }
-            }
             }
                         
             Debug.Log("ScreenPeek: Target camera not found, return current camera " + rc.currentCameraPosition);
