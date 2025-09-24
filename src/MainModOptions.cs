@@ -45,6 +45,10 @@ namespace ScreenPeek
 
         public static Configurable<bool> togglePeeking = instance.config.Bind("togglePeeking", false, new ConfigurableInfo("When checked, you will toggle in/out of the peeking state instead of having to hold it."));
 
+        public static Configurable<bool> toggleCSAnchor = instance.config.Bind("toggleCSAnchor", true, new ConfigurableInfo("When checked, the screen will anchor to you."));
+
+        public static Configurable<bool> toggleCSPeeking = instance.config.Bind("toggleCSPeeking", true, new ConfigurableInfo("When checked, the offset will stay until pressed again."));
+
         public override void Initialize()
         {
             base.Initialize();
@@ -83,6 +87,28 @@ namespace ScreenPeek
                     description = togglePeeking.info.description
                 },
                 new OpCheckBox(togglePeeking, new Vector2(150f, 400f))
+            });
+
+            tab.AddItems(new UIelement[]
+            {
+                new OpLabel(new Vector2(0f, 340f), new Vector2(100f, 25f), "Toggle camera scroll anchor", FLabelAlignment.Center, false, null)
+                {
+                    alignment = FLabelAlignment.Right,
+                    verticalAlignment = OpLabel.LabelVAlignment.Center,
+                    description = toggleCSAnchor.info.description
+                },
+                new OpCheckBox(toggleCSAnchor, new Vector2(150f, 320f))
+            });
+
+            tab.AddItems(new UIelement[]
+            {
+                new OpLabel(new Vector2(0f, 280f), new Vector2(100f, 25f), "Toggle camera scroll peek", FLabelAlignment.Center, false, null)
+                {
+                    alignment = FLabelAlignment.Right,
+                    verticalAlignment = OpLabel.LabelVAlignment.Center,
+                    description = toggleCSPeeking.info.description
+                },
+                new OpCheckBox(toggleCSPeeking, new Vector2(150f, 280f))
             });
 
             Tabs[1] = new OpTab(this, "Keybinds");

@@ -35,9 +35,11 @@
     </Reference>
     <Reference Include="SBCameraScroll">
       <HintPath>D:\SteamLibrary\steamapps\workshop\content\312520\2928752589\plugins\SBCameraScroll.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="SplitScreen Co-op">
       <HintPath>D:\SteamLibrary\steamapps\workshop\content\312520\2927089843\plugins\SplitScreen Co-op.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>D:\SteamLibrary\steamapps\common\Rain World\RainWorld_Data\Managed\UnityEngine.dll</HintPath>
